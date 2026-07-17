@@ -703,12 +703,16 @@
 
     <!-- Core Dynamic Database Workspace Control Engine Script -->
    <script>
-   const SUPABASE_URL = "https://amgouguawmqfvexfjdpd.supabase.co";
+  // 🌟 1. Supabase Configuration
+const SUPABASE_URL = "https://amgouguawmqfvexfjdpd.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_VelXcLSMx_oNtkBH34kTXQ_lVcQPqjX";
 
-// Initialize Supabase Client safely
+// Initialize Supabase Client (Error വരാത്ത രീതിയിൽ വിൻഡോ ഒബ്ജക്റ്റ് ഉപയോഗിച്ച് മാറ്റിയത്)
 const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+if (!supabase) {
+    console.error("Supabase Library ലോഡ് ആയിട്ടില്ല! HTML-ൽ CDN ലിങ്ക് ഉണ്ടെന്ന് ഉറപ്പാക്കുക.");
+}
 
     // 🌟 2. Global State Variables
     const majorExamsSubjects = ["Malayalam", "English", "Hindi", "Maths", "Science", "Social Science"];
