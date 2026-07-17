@@ -114,6 +114,18 @@
             color: white;
         }
 
+        .sidebar-item.logout-item {
+            color: #fca5a5;
+            margin-top: 10px;
+            border: 1px dashed rgba(239, 68, 68, 0.3);
+        }
+
+        .sidebar-item.logout-item:hover {
+            background: var(--danger);
+            color: white;
+            border-color: transparent;
+        }
+
         /* 🖥️ Main Workspace Content Area */
         .main-content {
             flex-grow: 1;
@@ -336,11 +348,8 @@
     <div id="teacher-login-screen">
         <div class="login-card">
             <h2>Workspace Login</h2>
-            <p style="color: var(--secondary); font-size: 13px; margin-bottom: 15px;">ലോഗിൻ ചെയ്യാൻ നിങ്ങളുടെ ക്ലാസ്സും പിന്നും നൽകുക</p>
-            <div class="form-group" style="text-align: left;">
-                <label>Teacher Full Name</label>
-                <input type="text" id="login-teacher-name" placeholder="Teacher Name ടൈപ്പ് ചെയ്യുക">
-            </div>
+            <p style="color: var(--secondary); font-size: 13px; margin-bottom: 20px;">ലോഗിൻ ചെയ്യാൻ ക്ലാസ്സും പിന്നും തിരഞ്ഞെടുക്കുക</p>
+            
             <div class="form-group" style="text-align: left;">
                 <label>Assigned Class Division</label>
                 <select id="login-class-selection">
@@ -374,6 +383,7 @@
             <li class="sidebar-item" id="nav-edit-tests" style="display: none;" onclick="switchTab('tab-tests')">📝 Continuous</li>
             <li class="sidebar-item" id="nav-edit-major-exams" style="display: none;" onclick="switchTab('tab-major-exams')">🏆 Term</li>
             <li class="sidebar-item" id="nav-edit-remarks" style="display: none;" onclick="switchTab('tab-remarks')">💬 Remarks</li>
+            <li class="sidebar-item logout-item" onclick="handleLogout()">🚪 Logout</li>
         </ul>
         <div style="margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
             <p style="font-size: 11px; color:#64748b;">Current Active Batch:</p>
@@ -608,7 +618,6 @@
         const majorExamsSubjects = ["Malayalam", "English", "Hindi", "Maths", "Science", "Social Science"];
         let globalStudentsDb = {};
         let activeStudentId = null;
-        let currentTeacherName = "";
         let currentTeacherClass = "";
         let tempBase64Photo = "";
         let saveTimeout = null;
@@ -652,12 +661,11 @@
 
         // 🌟 4. PIN-BASED SECURE TEACHER LOGIN SYSTEM
         function handleTeacherLogin() {
-            const nameInput = document.getElementById('login-teacher-name').value.trim();
             const classSelect = document.getElementById('login-class-selection').value;
             const pinInput = document.getElementById('login-class-pin').value.trim();
 
-            if (!nameInput || !classSelect || !pinInput) {
-                alert("ദയവായി പേര്, ക്ലാസ്സ്, ലോഗിൻ പിൻ എന്നിവ കൃത്യമായി നൽകുക!");
+            if (!classSelect || !pinInput) {
+                alert("ദയവായി ക്ലാസ്സും ലോഗിൻ പിന്നും നൽകുക!");
                 return;
             }
 
@@ -668,7 +676,6 @@
                 return;
             }
 
-            currentTeacherName = nameInput;
             currentTeacherClass = classSelect;
 
             document.getElementById('active-batch-label').innerText = currentTeacherClass.replace(/_/g, ' ');
@@ -677,6 +684,35 @@
 
             // Load class-specific data from Supabase
             loadDatabaseFromStorage();
+        }
+
+        // 🚪 LOGOUT FUNCTION
+        function handleLogout() {
+            if (confirm("തീർച്ചയായും ലോഗ് ഔട്ട് ചെയ്യണോ?")) {
+                // State variables reset ചെയ്യുക
+                activeStudentId = null;
+                currentTeacherClass = "";
+                globalStudentsDb = {};
+                tempBase64Photo = "";
+
+                // UI Inputs reset ചെയ്യുക
+                document.getElementById('login-class-selection').value = "";
+                document.getElementById('login-class-pin').value = "";
+                document.getElementById('active-batch-label').innerText = "None";
+                document.getElementById('student-directory-list').innerHTML = "";
+
+                // Edit tabs ഒളിപ്പിക്കുക
+                document.getElementById('nav-edit-profile').style.display = "none";
+                document.getElementById('nav-edit-tests').style.display = "none";
+                document.getElementById('nav-edit-major-exams').style.display = "none";
+                document.getElementById('nav-edit-remarks').style.display = "none";
+
+                // ഡാഷ്‌ബോർഡിലേക്ക് തിരികെ മാറ്റുക
+                switchTab('tab-dashboard');
+
+                // ലോഗിൻ സ്ക്രീൻ കാണിക്കുക
+                document.getElementById('teacher-login-screen').style.display = 'flex';
+            }
         }
 
         // 🌟 5. ATOMIC WORKSPACE SAVING LOGIC (SUPABASE)
@@ -1255,8 +1291,8 @@
             document.getElementById('printable-template').innerHTML = `
                 <div style="padding:30px; font-family:sans-serif;">
                     <div style="text-align:center; margin-bottom:20px; border-bottom:3px double #000; padding-bottom:10px;">
-                        <h2 style="margin:0 0 5px 0;">MY STUDENT MANAGEMENT SYSTEM REPORT SHEET</h2>
-                        <p style="margin:0; font-size:12px; color:#555;">Academic Session: ${currentTeacherClass.replace(/_/g,' ')} | Class In-Charge: ${currentTeacherName}</p>
+                        <h2 style="margin:0 0 5px 0;">STUDENT PROGRESS REPORT SHEET</h2>
+                        <p style="margin:0; font-size:12px; color:#555;">Academic Batch: ${currentTeacherClass.replace(/_/g,' ')}</p>
                     </div>
                     ${contentPayload}
                 </div>
