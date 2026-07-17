@@ -702,18 +702,18 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
     <!-- Core Dynamic Database Workspace Control Engine Script -->
-   <script>
-// 🌟 1. Supabase Configuration
-const SUPABASE_URL = "https://amgouguawmqfvexfjdpd.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_VelXcLSMx_oNtkBH34kTXQ_lVcQPqjX";
+  <script>
+    // 🌟 1. Supabase Configuration
+    const SUPABASE_URL = "https://amgouguawmqfvexfjdpd.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_VelXcLSMx_oNtkBH34kTXQ_lVcQPqjX";
 
-// സുരക്ഷിതമായി Supabase ക്ലയന്റ് ഇനീഷ്യലൈസ് ചെയ്യുന്നു
-let supabase;
-try {
-    supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-} catch (e) {
-    console.error("Supabase Initialization Error: ", e);
-}
+    // Initialize Supabase Client safely
+    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    if (!supabase) {
+        console.error("Supabase Library ലോഡ് ആയിട്ടില്ല! HTML-ൽ CDN ലിങ്ക് ഉണ്ടെന്ന് ഉറപ്പാക്കുക.");
+    }
+
     // 🌟 2. Global State Variables
     const majorExamsSubjects = ["Malayalam", "English", "Hindi", "Maths", "Science", "Social Science"];
     let globalStudentsDb = {};
@@ -755,7 +755,7 @@ try {
 
     // 🌟 5. ATOMIC DYNAMIC WORKSPACE SAVING LOGIC FOR SUPABASE
     async function saveDatabaseToStorage() {
-        if (!currentTeacherClass) return;
+        if (!currentTeacherClass || !supabase) return;
 
         const { data, error } = await supabase
             .from('school_data')
@@ -776,7 +776,7 @@ try {
 
     // 🌟 6. MULTI-CLASS DYNAMIC WORKSPACE LOAD QUERY HANDLER FOR SUPABASE
     async function loadDatabaseFromStorage() {
-        if (!currentTeacherClass) return;
+        if (!currentTeacherClass || !supabase) return;
 
         const { data, error } = await supabase
             .from('school_data')
@@ -1240,7 +1240,22 @@ try {
         saveCurrentStudentData();
     }
 
-    
+    function appendActivityRowDom(mIdx, sIdx, aIdx, actData) {
+        const container = document.getElementById(`activities-container-${mIdx}-${sIdx}`);
+        const row = document.createElement('div');
+        row.className = 'activity-item-row';
+        row.dataset.activityIndex = aIdx;
+        row.style = "display:grid; grid-template-columns: 1fr 120px auto; gap:10px; align-items:center; margin-bottom:5px;";
+
+        row.innerHTML = `
+            <input type="text" id="act-name-${mIdx}-${sIdx}-${aIdx}" value="${actData.name || ''}" placeholder="Evaluation Parameter Title / Internal Work Description" style="background:#fff; padding:6px;" oninput="saveCurrentStudentData()">
+            <select id="act-grade-${mIdx}-${sIdx}-${aIdx}" onchange="saveCurrentStudentData()" style="background:#fff; padding:6px;">
+                <option value="">Grade</option><option value="A+">A+</option><option value="A">A</option><option value="B+">B+</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option>
+            </select>
+            <button class="btn btn-secondary" style="padding:8px; color:var(--danger); background:none; border:none;" onclick="this.closest('.activity-item-row').remove(); saveCurrentStudentData();">🗑️</button>
+        `;
+        container.appendChild(row);
+    }
 
     // 🌟 BASE64 HIGH RESOLUTION PHOTO AVATAR PARSER BUFFER INTERFACE
     function handleImageUpload(e) {
