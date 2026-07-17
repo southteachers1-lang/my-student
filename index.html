@@ -702,137 +702,129 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
     <!-- Core Dynamic Database Workspace Control Engine Script -->
-    <script>
-        
-        // 🌟 1. Supabase Configuration (നിങ്ങളുടെ Supabase പ്രൊജക്റ്റ് ഡീറ്റെയിൽസ് ഇവിടെ നൽകുക)
-const SUPABASE_URL = "https://amgouguawmqfvexfjdpd.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_VelXcLSMx_oNtkBH34kTXQ_lVcQPqjX";
+   <script>
+    // 🌟 1. Supabase Configuration
+    const SUPABASE_URL = "https://amgouguawmqfvexfjdpd.supabase.co";
+    // ⚠️ ശ്രദ്ധിക്കുക: Supabase Settings -> API സെക്ഷനിൽ കാണുന്ന "anon" "public" കീ തന്നെ ഇവിടെ നൽകുക.
+    const SUPABASE_ANON_KEY = "sb_publishable_VelXcLSMx_oNtkBH34kTXQ_lVcQPqjX";
 
-// Initialize Supabase Client
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Initialize Supabase Client
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 🌟 2. Global State Variables
-const majorExamsSubjects = ["Malayalam", "English", "Hindi", "Maths", "Science", "Social Science"];
-let globalStudentsDb = {};
-let activeStudentId = null;
-let currentTeacherName = "";
-let currentTeacherClass = "";
-let tempBase64Photo = "";
-let saveTimeout = null;
-let monthCounter = 0;
-let subjectCounter = 0;
+    // 🌟 2. Global State Variables
+    const majorExamsSubjects = ["Malayalam", "English", "Hindi", "Maths", "Science", "Social Science"];
+    let globalStudentsDb = {};
+    let activeStudentId = null;
+    let currentTeacherName = "";
+    let currentTeacherClass = "";
+    let tempBase64Photo = "";
+    let saveTimeout = null;
+    let monthCounter = 0;
 
-// 🌟 3. App Initialization
-window.onload = function () {
-    if (typeof initMajorExamsTableStructure === "function") {
-        initMajorExamsTableStructure();
+    // 🌟 3. App Initialization
+    window.onload = function () {
+        if (typeof initMajorExamsTableStructure === "function") {
+            initMajorExamsTableStructure();
+        }
+        switchTab('tab-dashboard');
+    };
+
+    // 🌟 4. WORKSPACE ASSIGNMENT TEACHER INITIALIZATION LOGIN SYSTEM
+    function handleTeacherLogin() {
+        const nameInput = document.getElementById('login-teacher-name').value.trim();
+        const classSelect = document.getElementById('login-class-selection').value;
+
+        if (!nameInput || !classSelect) {
+            alert("ദയവായി നിങ്ങളുടെ പേരും അലോട്ട് ചെയ്ത ക്ലാസും തിരഞ്ഞെടുക്കുക!");
+            return;
+        }
+
+        currentTeacherName = nameInput;
+        currentTeacherClass = classSelect;
+
+        document.getElementById('active-batch-label').innerText = currentTeacherClass.replace('_', ' ');
+        document.getElementById('dashboard-workspace-title').innerText = `Classroom Hub Directory - ${currentTeacherClass.replace('_', ' ')}`;
+        document.getElementById('teacher-login-screen').style.display = 'none';
+
+        // Load data from Supabase Workspace
+        loadDatabaseFromStorage();
     }
-    switchTab('tab-dashboard');
-};
 
-// 🌟 4. WORKSPACE ASSIGNMENT TEACHER INITIALIZATION LOGIN SYSTEM
-function handleTeacherLogin() {
-    const nameInput = document.getElementById('login-teacher-name').value.trim();
-    const classSelect = document.getElementById('login-class-selection').value;
+    // 🌟 5. ATOMIC DYNAMIC WORKSPACE SAVING LOGIC FOR SUPABASE
+    async function saveDatabaseToStorage() {
+        if (!currentTeacherClass) return;
 
-    if (!nameInput || !classSelect) {
-        alert("ദയവായി നിങ്ങളുടെ പേരും അലോട്ട് ചെയ്ത ക്ലാസും തിരഞ്ഞെടുക്കുക!");
-        return;
+        const { data, error } = await supabase
+            .from('school_data')
+            .upsert({
+                class_id: currentTeacherClass,
+                students_db: globalStudentsDb,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'class_id' });
+
+        if (error) {
+            console.error("Supabase Sync Fault Error Logs: ", error);
+            alert("ഡാറ്റ ക്ലൗഡിൽ സമന്വയിപ്പിക്കുന്നതിൽ തകരാർ നേരിട്ടു!");
+        } else {
+            console.log(`Dynamic instance syncing complete for workspace: ${currentTeacherClass}`);
+            updateDashboardDirectory();
+        }
     }
 
-    currentTeacherName = nameInput;
-    currentTeacherClass = classSelect; 
+    // 🌟 6. MULTI-CLASS DYNAMIC WORKSPACE LOAD QUERY HANDLER FOR SUPABASE
+    async function loadDatabaseFromStorage() {
+        if (!currentTeacherClass) return;
 
-    document.getElementById('active-batch-label').innerText = currentTeacherClass.replace('_', ' ');
-    document.getElementById('dashboard-workspace-title').innerText = `Classroom Hub Directory - ${currentTeacherClass.replace('_', ' ')}`;
-    
-    document.getElementById('teacher-login-screen').style.display = 'none';
+        const { data, error } = await supabase
+            .from('school_data')
+            .select('students_db')
+            .eq('class_id', currentTeacherClass)
+            .single();
 
-    // Load data from Supabase Workspace
-    loadDatabaseFromStorage();
-}
+        if (error && error.code !== 'PGRST116') {
+            console.error("Database Retrieval Error Matrix: ", error);
+            return;
+        }
 
-// 🌟 5. ATOMIC DYNAMIC WORKSPACE SAVING LOGIC FOR SUPABASE
-async function saveDatabaseToStorage() {
-    if (!currentTeacherClass) return;
-
-    const { data, error } = await supabase
-        .from('school_data')
-        .upsert({ 
-            class_id: currentTeacherClass, 
-            students_db: globalStudentsDb,
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'class_id' });
-
-    if (error) {
-        console.error("Supabase Sync Fault Error Logs: ", error);
-        alert("ഡാറ്റ ക്ലൗഡിൽ സമന്വയിപ്പിക്കുന്നതിൽ തകരാർ നേരിട്ടു!");
-    } else {
-        console.log(`Dynamic instance syncing complete for workspace: ${currentTeacherClass}`);
+        if (data && data.students_db) {
+            globalStudentsDb = data.students_db;
+        } else {
+            globalStudentsDb = {};
+        }
         updateDashboardDirectory();
     }
-}
 
-// 🌟 6. MULTI-CLASS DYNAMIC WORKSPACE LOAD QUERY HANDLER FOR SUPABASE
-async function loadDatabaseFromStorage() {
-    if (!currentTeacherClass) return;
-
-    const { data, error } = await supabase
-        .from('school_data')
-        .select('students_db')
-        .eq('class_id', currentTeacherClass)
-        .single();
-
-    if (error && error.code !== 'PGRST116') {
-        console.error("Database Retrieval Error Matrix: ", error);
-        return;
-    }
-
-    if (data && data.students_db) {
-        globalStudentsDb = data.students_db;
-    } else {
-        globalStudentsDb = {}; 
-    }
-    updateDashboardDirectory();
-}
-
-        // 🌟 DYNAMIC DASHBOARD ENGINE UPDATER FOR SUPABASE DATA
-function updateDashboardDirectory() {
-    const listContainer = document.getElementById('student-directory-list');
-    if (!listContainer) return;
-    
-    listContainer.innerHTML = "";
-    
-    // globalStudentsDb-ൽ ഉള്ള ഓരോ വിദ്യാർത്ഥിയുടെയും കാർഡുകൾ നിർമ്മിക്കുന്നു
-    const studentIds = Object.keys(globalStudentsDb);
-    
-    if (studentIds.length === 0) {
-        listContainer.innerHTML = `
+    // 🌟 DYNAMIC DASHBOARD ENGINE UPDATER FOR SUPABASE DATA
+    function updateDashboardDirectory() {
+        const listContainer = document.getElementById('student-directory-list');
+        if (!listContainer) return;
+        listContainer.innerHTML = "";
+        
+        const studentIds = Object.keys(globalStudentsDb);
+        if (studentIds.length === 0) {
+            listContainer.innerHTML = `
             <div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--secondary); background:#ffffff; border-radius:12px; border:1px dashed var(--border-color);">
                 <span style="font-size: 30px; display:block; margin-bottom:10px;">👥</span>
                 ഈ ക്ലാസ്സിൽ വിദ്യാർത്ഥികളുടെ പ്രൊഫൈലുകൾ ഒന്നും തന്നെ ഇതുവരെ രജിസ്റ്റർ ചെയ്തിട്ടില്ല.
             </div>`;
-        return;
-    }
-    
-    studentIds.forEach(id => {
-        const student = globalStudentsDb[id];
-        const card = document.createElement('div');
-        card.className = 'card student-profile-card';
-        card.style.display = 'flex';
-        card.style.alignItems = 'center';
-        card.style.justifyContent = 'space-between';
-        card.style.padding = '15px';
-        card.style.background = '#ffffff';
-        card.style.borderRadius = '12px';
-        card.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.05)';
-        
-        const photoSrc = student.bio.photo ? student.bio.photo : '';
-        const photoHTML = photoSrc 
-            ? `<img src="${photoSrc}" style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:2px solid var(--primary);">`
-            : `<div style="width:50px; height:50px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-size:20px; color:#94a3b8;">👤</div>`;
-            
-        card.innerHTML = `
+            return;
+        }
+        studentIds.forEach(id => {
+            const student = globalStudentsDb[id];
+            const card = document.createElement('div');
+            card.className = 'card student-profile-card';
+            card.style.display = 'flex';
+            card.style.alignItems = 'center';
+            card.style.justifyContent = 'space-between';
+            card.style.padding = '15px';
+            card.style.background = '#ffffff';
+            card.style.borderRadius = '12px';
+            card.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.05)';
+            const photoSrc = student.bio.photo ? student.bio.photo : '';
+            const photoHTML = photoSrc
+                ? `<img src="${photoSrc}" style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:2px solid var(--primary);">`
+                : `<div style="width:50px; height:50px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-size:20px; color:#94a3b8;">👤</div>`;
+            card.innerHTML = `
             <div style="display:flex; align-items:center; gap:15px;">
                 ${photoHTML}
                 <div>
@@ -845,516 +837,502 @@ function updateDashboardDirectory() {
                 <button class="btn btn-primary" style="padding: 6px 12px; font-size:12px;" onclick="loadStudentForEditing('${id}')">📝 Edit</button>
                 <button class="btn btn-danger" style="padding: 6px 10px; font-size:12px; background:#fee2e2; color:var(--danger); border:none;" onclick="deleteStudentProfile('${id}')">🗑️</button>
             </div>
-        `;
-        listContainer.appendChild(card);
-    });
-}
+            `;
+            listContainer.appendChild(card);
+        });
+    }
 
-        function openQuickPreviewModal(id) {
-            const student = globalStudentsDb[id];
-            if (!student) return;
+    function openQuickPreviewModal(id) {
+        const student = globalStudentsDb[id];
+        if (!student) return;
 
-            const modal = document.getElementById('quick-preview-modal');
-            let reportHTML = "";
+        const modal = document.getElementById('quick-preview-modal');
+        let reportHTML = "";
 
-            if (student.examMonths && student.examMonths.length > 0) {
-                student.examMonths.forEach(m => {
-                    let tableRows = "";
-                    m.subjects.forEach(sub => {
-                        let activityCount = sub.activities.length;
-                        if (activityCount === 0) {
-                            tableRows += `<tr><td style="font-weight:bold; background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">${sub.title}</td><td style="border:1px solid #cbd5e1; padding:8px;">—</td><td style="text-align:center; border:1px solid #cbd5e1; padding:8px;">—</td></tr>`;
-                        } else {
-                            sub.activities.forEach((act, idx) => {
-                                if (idx === 0) {
-                                    tableRows += `<tr><td rowspan="${activityCount}" style="font-weight:bold; vertical-align:middle; background:#f8fafc; color:#0f172a; border:1px solid #cbd5e1; padding:8px; width:180px;">${sub.title}</td><td style="border:1px solid #cbd5e1; padding:8px;">${act.name}</td><td style="text-align:center; font-weight:bold; color:var(--primary); border:1px solid #cbd5e1; padding:8px; width:80px;">${act.grade}</td></tr>`;
-                                } else {
-                                    tableRows += `<tr><td style="border:1px solid #cbd5e1; padding:8px;">${act.name}</td><td style="text-align:center; font-weight:bold; color:var(--primary); border:1px solid #cbd5e1; padding:8px;">${act.grade}</td></tr>`;
-                                }
-                            });
-                        }
-                    });
-
-                    reportHTML += `
-                    <div style="margin-top:15px; background:#ffffff; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">
-                        <h4 style="color:var(--primary); font-size:13px; margin:0 0 8px 0; border-left:4px solid var(--primary); padding-left:8px;">📅 Timeline Record Node: ${m.monthName || 'General Evaluation Node'}</h4>
-                        <table class="academic-printable-table" style="width:100%; border-collapse:collapse; font-size:13px;">
-                            <thead>
-                                <tr style="background:#f1f5f9; color:#334155;">
-                                    <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Subject Area</th>
-                                    <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Evaluation Parameters / Activity Description</th>
-                                    <th style="border:1px solid #cbd5e1; padding:6px; text-align:center;">Grade</th>
-                                </tr>
-                            </thead>
-                            <tbody>${tableRows || '<tr><td colspan="3" style="text-align:center; padding:8px; color:#94a3b8;">No Parameters Provided</td></tr>'}</tbody>
-                        </table>
-                    </div>`;
+        if (student.examMonths && student.examMonths.length > 0) {
+            student.examMonths.forEach(m => {
+                let tableRows = "";
+                m.subjects.forEach(sub => {
+                    let activityCount = sub.activities.length;
+                    if (activityCount === 0) {
+                        tableRows += `<tr><td style="font-weight:bold; background:#f8fafc; border:1px solid #cbd5e1; padding:8px;">${sub.title}</td><td style="border:1px solid #cbd5e1; padding:8px;">—</td><td style="text-align:center; border:1px solid #cbd5e1; padding:8px;">—</td></tr>`;
+                    } else {
+                        sub.activities.forEach((act, idx) => {
+                            if (idx === 0) {
+                                tableRows += `<tr><td rowspan="${activityCount}" style="font-weight:bold; vertical-align:middle; background:#f8fafc; color:#0f172a; border:1px solid #cbd5e1; padding:8px; width:180px;">${sub.title}</td><td style="border:1px solid #cbd5e1; padding:8px;">${act.name}</td><td style="text-align:center; font-weight:bold; color:var(--primary); border:1px solid #cbd5e1; padding:8px; width:80px;">${act.grade}</td></tr>`;
+                            } else {
+                                tableRows += `<tr><td style="border:1px solid #cbd5e1; padding:8px;">${act.name}</td><td style="text-align:center; font-weight:bold; color:var(--primary); border:1px solid #cbd5e1; padding:8px;">${act.grade}</td></tr>`;
+                            }
+                        });
+                    }
                 });
-            }
 
-            const savedMajors = student.majorExams || {};
-            let majorRowsHTML = "";
-            majorExamsSubjects.forEach(sub => {
-                const subKey = sub.replace(/\s+/g, '');
-                const subGrades = savedMajors[subKey] || { onam: "", christmas: "", annual: "" };
-                majorRowsHTML += `
-                <tr>
-                    <td style="border:1px solid #cbd5e1; padding:8px; font-weight:600;">${sub}</td>
-                    <td style="border:1px solid #cbd5e1; padding:8px; text-align:center; font-weight:bold; color:var(--success);">${subGrades.onam || '—'}</td>
-                    <td style="border:1px solid #cbd5e1; padding:8px; text-align:center; font-weight:bold; color:var(--success);">${subGrades.christmas || '—'}</td>
-                    <td style="border:1px solid #cbd5e1; padding:8px; text-align:center; font-weight:bold; color:var(--success);">${subGrades.annual || '—'}</td>
-                </tr>`;
-            });
-
-            const photo = student.bio.photo ? `<img src="${student.bio.photo}" style="width:90px; height:90px; object-fit:cover; border:1px solid #cbd5e1; border-radius:6px; float:right; margin-left:15px;">` : `<div style="width:90px; height:90px; border:1px dashed #cbd5e1; background:#f8fafc; display:flex; align-items:center; justify-content:center; float:right; font-size:11px; color:#94a3b8; margin-left:15px;">No Photo Data</div>`;
-
-           // Continuation of openQuickPreviewModal Payload content generation
-            document.getElementById('preview-modal-body-content').innerHTML = `
-                <div style="min-height:95px; margin-bottom:15px; border-bottom:2px solid var(--border-color); padding-bottom:15px;">
-                    ${photo}
-                    <h3 style="margin:0 0 6px 0; color:var(--accent); font-size:20px;">${student.bio.name}</h3>
-                    <p style="font-size:13px; color:var(--secondary); margin:0 0 4px 0;">Admission Key Number: <strong>${student.bio.admissionNo}</strong> | Class Level: <strong>${student.bio.classYear || '—'}</strong></p>
-                    <p style="font-size:12px; color:var(--secondary); margin:0;">Gender: ${student.bio.gender || '—'} | Blood Group: <span style="color:#ef4444; font-weight:600;">${student.bio.bloodGroup || '—'}</span> | Nationality: ${student.bio.nationality || '—'}</p>
-                </div>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; font-size:12px; margin-bottom:15px;">
-                    <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">
-                        <strong>Family Infrastructure Context:</strong><br>
-                        Father: ${student.bio.fatherName || '—'}<br>Mother: ${student.bio.motherName || '—'}<br>Family Type: ${student.bio.familyType || '—'}
-                    </div>
-                    <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">
-                        <strong>Permanent Contact Mapping:</strong><br>
-                        Phone No: ${student.bio.contactPhone || '—'}<br>Address: ${student.bio.homeAddress || '—'}
-                    </div>
-                </div>
-
-                <div style="margin-top:20px;">
-                    <h3 style="font-size:14px; color:var(--accent); margin-bottom:10px;">🏆 Kerala Curriculum Standardized Evaluation Term Records</h3>
-                    <table class="academic-printable-table" style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:20px;">
+                reportHTML += `
+                <div style="margin-top:15px; background:#ffffff; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">
+                    <h4 style="color:var(--primary); font-size:13px; margin:0 0 8px 0; border-left:4px solid var(--primary); padding-left:8px;">📅 Timeline Record Node: ${m.monthName || 'General Evaluation Node'}</h4>
+                    <table class="academic-printable-table" style="width:100%; border-collapse:collapse; font-size:13px;">
                         <thead>
                             <tr style="background:#f1f5f9; color:#334155;">
-                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:left;">Subject</th>
-                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Onam (1st Term)</th>
-                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Christmas (2nd Term)</th>
-                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Annual (Final Term)</th>
+                                <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Subject Area</th>
+                                <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Evaluation Parameters / Activity Description</th>
+                                <th style="border:1px solid #cbd5e1; padding:6px; text-align:center;">Grade</th>
                             </tr>
                         </thead>
-                        <tbody>${majorRowsHTML}</tbody>
+                        <tbody>${tableRows || '<tr><td colspan="3" style="text-align:center; padding:8px; color:#94a3b8;">No Parameters Provided</td></tr>'}</tbody>
                     </table>
-                </div>
-
-                <div style="margin-top:20px;">
-                    <h3>📊 Progressive Continuous Evaluation Roadmap Records</h3>
-                    ${reportHTML || '<p style="font-size:13px; color:var(--secondary); text-align:center; padding:15px; border:1px dashed #cbd5e1; border-radius:6px;">No dynamic monthly milestones logged yet.</p>'}
-                </div>
-
-                <div style="margin-top:20px; background:#fff7ed; border-left:4px solid #f97316; padding:12px; border-radius:0 6px 6px 0;">
-                    <h4 style="margin:0 0 6px 0; color:#c2410c; font-size:13px;">💬 Comprehensive Observation & Diagnostic Commentary</h4>
-                    <p style="font-size:13px; color:#475569; margin:0; white-space:pre-wrap;">${student.remarks || 'No behavioral logs compiled yet.'}</p>
-                </div>
-            `;
-
-            document.getElementById('preview-modal-print-btn').onclick = function() {
-                closeQuickPreviewModal();
-                loadStudentForEditing(id);
-            };
-
-            modal.classList.add('active');
+                </div>`;
+            });
         }
 
-        function closeQuickPreviewModal() {
-            document.getElementById('quick-preview-modal').classList.remove('active');
-        }
+        const savedMajors = student.majorExams || {};
+        let majorRowsHTML = "";
+        majorExamsSubjects.forEach(sub => {
+            const subKey = sub.replace(/\s+/g, '');
+            const subGrades = savedMajors[subKey] || { onam: "", christmas: "", annual: "" };
+            majorRowsHTML += `
+            <tr>
+                <td style="border:1px solid #cbd5e1; padding:8px; font-weight:600;">${sub}</td>
+                <td style="border:1px solid #cbd5e1; padding:8px; text-align:center; font-weight:bold; color:var(--success);">${subGrades.onam || '—'}</td>
+                <td style="border:1px solid #cbd5e1; padding:8px; text-align:center; font-weight:bold; color:var(--success);">${subGrades.christmas || '—'}</td>
+                <td style="border:1px solid #cbd5e1; padding:8px; text-align:center; font-weight:bold; color:var(--success);">${subGrades.annual || '—'}</td>
+            </tr>`;
+        });
 
-        // 🌟 SWITCH MANAGEMENT BETWEEN DIFFERENT WORKSPACE WORKFLOW TABS
-        function switchTab(tabId) {
-            document.querySelectorAll('.app-section').forEach(sec => sec.classList.remove('active'));
-            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+        const photo = student.bio.photo ? `<img src="${student.bio.photo}" style="width:90px; height:90px; object-fit:cover; border:1px solid #cbd5e1; border-radius:6px; float:right; margin-left:15px;">` : `<div style="width:90px; height:90px; border:1px dashed #cbd5e1; background:#f8fafc; display:flex; align-items:center; justify-content:center; float:right; font-size:11px; color:#94a3b8; margin-left:15px;">No Photo Data</div>`;
 
-            const targetSection = document.getElementById(tabId);
-            if(targetSection) targetSection.classList.add('active');
+        document.getElementById('preview-modal-body-content').innerHTML = `
+        <div style="min-height:95px; margin-bottom:15px; border-bottom:2px solid var(--border-color); padding-bottom:15px;">
+            ${photo}
+            <h3 style="margin:0 0 6px 0; color:var(--accent); font-size:20px;">${student.bio.name}</h3>
+            <p style="font-size:13px; color:var(--secondary); margin:0 0 4px 0;">Admission Key Number: <strong>${student.bio.admissionNo}</strong> | Class Level: <strong>${student.bio.classYear || '—'}</strong></p>
+            <p style="font-size:12px; color:var(--secondary); margin:0;">Gender: ${student.bio.gender || '—'} | Blood Group: <span style="color:#ef4444; font-weight:600;">${student.bio.bloodGroup || '—'}</span> | Nationality: ${student.bio.nationality || '—'}</p>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; font-size:12px; margin-bottom:15px;">
+            <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">
+                <strong>Family Infrastructure Context:</strong><br>
+                Father: ${student.bio.fatherName || '—'}<br>Mother: ${student.bio.motherName || '—'}<br>Family Type: ${student.bio.familyType || '—'}
+            </div>
+            <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">
+                <strong>Permanent Contact Mapping:</strong><br>
+                Phone No: ${student.bio.contactPhone || '—'}<br>Address: ${student.bio.homeAddress || '—'}
+            </div>
+        </div>
 
-            // Set active navigation design alignment mapping layout markers
-            const sidebarItems = document.querySelectorAll('.sidebar-menu .sidebar-item');
+        <div style="margin-top:20px;">
+            <h3 style="font-size:14px; color:var(--accent); margin-bottom:10px;">🏆 Kerala Curriculum Standardized Evaluation Term Records</h3>
+            <table class="academic-printable-table" style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:20px;">
+                <thead>
+                    <tr style="background:#f1f5f9; color:#334155;">
+                        <th style="border:1px solid #cbd5e1; padding:8px; text-align:left;">Subject</th>
+                        <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Onam (1st Term)</th>
+                        <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Christmas (2nd Term)</th>
+                        <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Annual (Final Term)</th>
+                    </tr>
+                </thead>
+                <tbody>${majorRowsHTML}</tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:20px;">
+            <h3>📊 Progressive Continuous Evaluation Roadmap Records</h3>
+            ${reportHTML || '<p style="font-size:13px; color:var(--secondary); text-align:center; padding:15px; border:1px dashed #cbd5e1; border-radius:6px;">No dynamic monthly milestones logged yet.</p>'}
+        </div>
+
+        <div style="margin-top:20px; background:#fff7ed; border-left:4px solid #f97316; padding:12px; border-radius:0 6px 6px 0;">
+            <h4 style="margin:0 0 6px 0; color:#c2410c; font-size:13px;">💬 Comprehensive Observation & Diagnostic Commentary</h4>
+            <p style="font-size:13px; color:#475569; margin:0; white-space:pre-wrap;">${student.remarks || 'No behavioral logs compiled yet.'}</p>
+        </div>
+        `;
+
+        document.getElementById('preview-modal-print-btn').onclick = function() {
+            closeQuickPreviewModal();
+            loadStudentForEditing(id);
+        };
+
+        modal.classList.add('active');
+    }
+
+    function closeQuickPreviewModal() {
+        document.getElementById('quick-preview-modal').classList.remove('active');
+    }
+
+    // 🌟 SWITCH MANAGEMENT BETWEEN DIFFERENT WORKSPACE WORKFLOW TABS
+    function switchTab(tabId) {
+        document.querySelectorAll('.app-section').forEach(sec => sec.classList.remove('active'));
+        document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+
+        const targetSection = document.getElementById(tabId);
+        if(targetSection) targetSection.classList.add('active');
+
+        const sidebarItems = document.querySelectorAll('.sidebar-menu .sidebar-item');
+        if (sidebarItems.length > 0) {
             if(tabId === 'tab-dashboard') sidebarItems[0].classList.add('active');
             else if(tabId === 'tab-bio') document.getElementById('nav-edit-profile').classList.add('active');
             else if(tabId === 'tab-tests') document.getElementById('nav-edit-tests').classList.add('active');
             else if(tabId === 'tab-major-exams') document.getElementById('nav-edit-major-exams').classList.add('active');
             else if(tabId === 'tab-remarks') document.getElementById('nav-edit-remarks').classList.add('active');
         }
+    }
 
-        // 🌟 CORE STUDENT IDENTITY WORKSPACE GENERATION PARSER
-        function createNewStudentProfile() {
-            const name = document.getElementById('modal-new-name').value.trim();
-            const admNo = document.getElementById('modal-new-adm').value.trim().toUpperCase();
+    // 🌟 CORE STUDENT IDENTITY WORKSPACE GENERATION PARSER
+    function createNewStudentProfile() {
+        const name = document.getElementById('modal-new-name').value.trim();
+        const admNo = document.getElementById('modal-new-adm').value.trim().toUpperCase();
 
-            if (!name || !admNo) {
-                alert("ദയവായി വിദ്യാർത്ഥിയുടെ പേരും അഡ്മിഷൻ നമ്പറും നൽകുക!");
-                return;
-            }
-
-            if (globalStudentsDb[admNo]) {
-                alert("ഈ അഡ്മിഷൻ നമ്പറിൽ ഒരു പ്രൊഫൈൽ നിലവിലുണ്ട്!");
-                return;
-            }
-
-            globalStudentsDb[admNo] = {
-                bio: {
-                    name: name,
-                    admissionNo: admNo,
-                    gender: "Female",
-                    classYear: currentTeacherClass.replace('_', ' '),
-                    admissionDate: "", bloodGroup: "", dob: "",
-                    caste: "", religion: "", nationality: "Indian",
-                    contactPhone: "", homeAddress: "", fatherName: "",
-                    motherName: "", siblingsMatrix: "", familyType: "Nuclear Family (അണുകുടുംബം)",
-                    photo: ""
-                },
-                examMonths: [],
-                majorExams: {},
-                remarks: ""
-            };
-
-            saveDatabaseToStorage();
-            closeAddStudentModal();
-            loadStudentForEditing(admNo);
+        if (!name || !admNo) {
+            alert("ദയവായി വിദ്യാർത്ഥിയുടെ പേരും അഡ്മിഷൻ നമ്പറും നൽകുക!");
+            return;
         }
 
-        function loadStudentForEditing(id) {
-            activeStudentId = id;
-            const student = globalStudentsDb[id];
+        if (globalStudentsDb[admNo]) {
+            alert("ഈ അഡ്മിഷൻ നമ്പറിൽ ഒരു പ്രൊഫൈൽ നിലവിലുണ്ട്!");
+            return;
+        }
+
+        globalStudentsDb[admNo] = {
+            bio: {
+                name: name,
+                admissionNo: admNo,
+                gender: "Female",
+                classYear: currentTeacherClass.replace('_', ' '),
+                admissionDate: "", bloodGroup: "", dob: "",
+                caste: "", religion: "", nationality: "Indian",
+                contactPhone: "", homeAddress: "", fatherName: "",
+                motherName: "", siblingsMatrix: "", familyType: "Nuclear Family (അണുകുടുംബം)",
+                photo: ""
+            },
+            examMonths: [],
+            majorExams: {},
+            remarks: ""
+        };
+
+        saveDatabaseToStorage();
+        closeAddStudentModal();
+        loadStudentForEditing(admNo);
+    }
+
+    function loadStudentForEditing(id) {
+        activeStudentId = id;
+        const student = globalStudentsDb[id];
+        if (!student) return;
+
+        document.getElementById('bio-name').value = student.bio.name || '';
+        document.getElementById('bio-gender').value = student.bio.gender || 'Female';
+        document.getElementById('bio-class').value = student.bio.classYear || '';
+        document.getElementById('bio-adm-no').value = student.bio.admissionNo || '';
+        document.getElementById('bio-adm-date').value = student.bio.admissionDate || '';
+        document.getElementById('bio-blood').value = student.bio.bloodGroup || '';
+        document.getElementById('bio-dob').value = student.bio.dob || '';
+        document.getElementById('bio-caste').value = student.bio.caste || '';
+        document.getElementById('bio-religion').value = student.bio.religion || '';
+        document.getElementById('bio-nationality').value = student.bio.nationality || 'Indian';
+        document.getElementById('bio-phone').value = student.bio.contactPhone || '';
+        document.getElementById('bio-address').value = student.bio.homeAddress || '';
+        document.getElementById('bio-father').value = student.bio.fatherName || '';
+        document.getElementById('bio-mother').value = student.bio.motherName || '';
+        document.getElementById('bio-siblings').value = student.bio.siblingsMatrix || '';
+        document.getElementById('bio-family-type').value = student.bio.familyType || 'Nuclear Family (അണുകുടുംബം)';
+        document.getElementById('teacher-notes').value = student.remarks || '';
+
+        const viewbox = document.getElementById('image-viewbox');
+        if(student.bio.photo) {
+            viewbox.innerHTML = `<img src="${student.bio.photo}" style="width:100%; height:100%; object-fit:cover;">`;
+            tempBase64Photo = student.bio.photo;
+        } else {
+            viewbox.innerHTML = `<span style="font-size: 12px; color: var(--secondary);">No Photo</span>`;
+            tempBase64Photo = "";
+        }
+
+        const labelStr = `${student.bio.name} (${student.bio.admissionNo})`;
+        document.getElementById('academic-student-subtitle').innerText = `Active Session: ${labelStr}`;
+        document.getElementById('major-exams-student-subtitle').innerText = `Active Session: ${labelStr}`;
+
+        renderMonthsBlocksArchitecture();
+        loadMajorExamsStateMatrix();
+
+        document.getElementById('nav-edit-profile').style.display = "block";
+        document.getElementById('nav-edit-tests').style.display = "block";
+        document.getElementById('nav-edit-major-exams').style.display = "block";
+        document.getElementById('nav-edit-remarks').style.display = "block";
+
+        switchTab('tab-bio');
+    }
+
+    function loadMajorExamsStateMatrix() {
+        const student = globalStudentsDb[activeStudentId];
+        const savedMajors = student.majorExams || {};
+        majorExamsSubjects.forEach(sub => {
+            const subKey = sub.replace(/\s+/g, '');
+            const subGrades = savedMajors[subKey] || { onam: "", christmas: "", annual: "" };
+            document.getElementById(`major-grade-onam-${subKey}`).value = subGrades.onam || "";
+            document.getElementById(`major-grade-christmas-${subKey}`).value = subGrades.christmas || "";
+            document.getElementById(`major-grade-annual-${subKey}`).value = subGrades.annual || "";
+        });
+    }
+
+    // 🌟 DEBOUNCED LIVE SAVING PIPELINE MATRIX
+    function saveCurrentStudentData() {
+        if (!activeStudentId) return;
+
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            const student = globalStudentsDb[activeStudentId];
             if (!student) return;
 
-            // Form inputs mapping visualization assignments
-            document.getElementById('bio-name').value = student.bio.name || '';
-            document.getElementById('bio-gender').value = student.bio.gender || 'Female';
-            document.getElementById('bio-class').value = student.bio.classYear || '';
-            document.getElementById('bio-adm-no').value = student.bio.admissionNo || '';
-            document.getElementById('bio-adm-date').value = student.bio.admissionDate || '';
-            document.getElementById('bio-blood').value = student.bio.bloodGroup || '';
-            document.getElementById('bio-dob').value = student.bio.dob || '';
-            document.getElementById('bio-caste').value = student.bio.caste || '';
-            document.getElementById('bio-religion').value = student.bio.religion || '';
-            document.getElementById('bio-nationality').value = student.bio.nationality || 'Indian';
-            document.getElementById('bio-phone').value = student.bio.contactPhone || '';
-            document.getElementById('bio-address').value = student.bio.homeAddress || '';
-            document.getElementById('bio-father').value = student.bio.fatherName || '';
-            document.getElementById('bio-mother').value = student.bio.motherName || '';
-            document.getElementById('bio-siblings').value = student.bio.siblingsMatrix || '';
-            document.getElementById('bio-family-type').value = student.bio.familyType || 'Nuclear Family (അണുകുടുംബം)';
-            document.getElementById('teacher-notes').value = student.remarks || '';
+            student.bio.name = document.getElementById('bio-name').value;
+            student.bio.gender = document.getElementById('bio-gender').value;
+            student.bio.classYear = document.getElementById('bio-class').value;
+            student.bio.admissionDate = document.getElementById('bio-adm-date').value;
+            student.bio.bloodGroup = document.getElementById('bio-blood').value;
+            student.bio.dob = document.getElementById('bio-dob').value;
+            student.bio.caste = document.getElementById('bio-caste').value;
+            student.bio.religion = document.getElementById('bio-religion').value;
+            student.bio.nationality = document.getElementById('bio-nationality').value;
+            student.bio.contactPhone = document.getElementById('bio-phone').value;
+            student.bio.homeAddress = document.getElementById('bio-address').value;
+            student.bio.fatherName = document.getElementById('bio-father').value;
+            student.bio.motherName = document.getElementById('bio-mother').value;
+            student.bio.siblingsMatrix = document.getElementById('bio-siblings').value;
+            student.bio.familyType = document.getElementById('bio-family-type').value;
+            student.bio.photo = tempBase64Photo;
+            student.remarks = document.getElementById('teacher-notes').value;
 
-            // Render photo state mapping indicators
-            const viewbox = document.getElementById('image-viewbox');
-            if(student.bio.photo) {
-                viewbox.innerHTML = `<img src="${student.bio.photo}" style="width:100%; height:100%; object-fit:cover;">`;
-                tempBase64Photo = student.bio.photo;
-            } else {
-                viewbox.innerHTML = `<span style="font-size: 12px; color: var(--secondary);">No Photo</span>`;
-                tempBase64Photo = "";
-            }
-
-            // Subtitle contextual descriptions overrides layout settings
-            const labelStr = `${student.bio.name} (${student.bio.admissionNo})`;
-            document.getElementById('academic-student-subtitle').innerText = `Active Session: ${labelStr}`;
-            document.getElementById('major-exams-student-subtitle').innerText = `Active Session: ${labelStr}`;
-
-            // Re-render Dynamic Months components and Terminal Grids structures
-            renderMonthsBlocksArchitecture();
-            loadMajorExamsStateMatrix();
-
-            // Dynamic visibility state controllers mapping setups
-            document.getElementById('nav-edit-profile').style.display = "block";
-            document.getElementById('nav-edit-tests').style.display = "block";
-            document.getElementById('nav-edit-major-exams').style.display = "block";
-            document.getElementById('nav-edit-remarks').style.display = "block";
-
-            switchTab('tab-bio');
-        }
-
-        function loadMajorExamsStateMatrix() {
-            const student = globalStudentsDb[activeStudentId];
-            const savedMajors = student.majorExams || {};
-            
+            student.majorExams = {};
             majorExamsSubjects.forEach(sub => {
                 const subKey = sub.replace(/\s+/g, '');
-                const subGrades = savedMajors[subKey] || { onam: "", christmas: "", annual: "" };
-                
-                document.getElementById(`major-grade-onam-${subKey}`).value = subGrades.onam || "";
-                document.getElementById(`major-grade-christmas-${subKey}`).value = subGrades.christmas || "";
-                document.getElementById(`major-grade-annual-${subKey}`).value = subGrades.annual || "";
+                student.majorExams[subKey] = {
+                    onam: document.getElementById(`major-grade-onam-${subKey}`).value,
+                    christmas: document.getElementById(`major-grade-christmas-${subKey}`).value,
+                    annual: document.getElementById(`major-grade-annual-${subKey}`).value
+                };
             });
-        }
 
-        // 🌟 DEBOUNCED LIVE SAVING PIPELINE MATRIX
-        function saveCurrentStudentData() {
-            if (!activeStudentId) return;
-
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-                const student = globalStudentsDb[activeStudentId];
-                if (!student) return;
-
-                // Sync basic data models attributes mapping allocations
-                student.bio.name = document.getElementById('bio-name').value;
-                student.bio.gender = document.getElementById('bio-gender').value;
-                student.bio.classYear = document.getElementById('bio-class').value;
-                student.bio.admissionDate = document.getElementById('bio-adm-date').value;
-                student.bio.bloodGroup = document.getElementById('bio-blood').value;
-                student.bio.dob = document.getElementById('bio-dob').value;
-                student.bio.caste = document.getElementById('bio-caste').value;
-                student.bio.religion = document.getElementById('bio-religion').value;
-                student.bio.nationality = document.getElementById('bio-nationality').value;
-                student.bio.contactPhone = document.getElementById('bio-phone').value;
-                student.bio.homeAddress = document.getElementById('bio-address').value;
-                student.bio.fatherName = document.getElementById('bio-father').value;
-                student.bio.motherName = document.getElementById('bio-mother').value;
-                student.bio.siblingsMatrix = document.getElementById('bio-siblings').value;
-                student.bio.familyType = document.getElementById('bio-family-type').value;
-                student.bio.photo = tempBase64Photo;
-                student.remarks = document.getElementById('teacher-notes').value;
-
-                // Map and compilation extraction trackers for Kerala terminal matrices evaluation grids
-                student.majorExams = {};
-                majorExamsSubjects.forEach(sub => {
-                    const subKey = sub.replace(/\s+/g, '');
-                    student.majorExams[subKey] = {
-                        onam: document.getElementById(`major-grade-onam-${subKey}`).value,
-                        christmas: document.getElementById(`major-grade-christmas-${subKey}`).value,
-                        annual: document.getElementById(`major-grade-annual-${subKey}`).value
-                    };
-                });
-
-                // Compile monthly logs structured data tree allocations mapping systems
-                student.examMonths = [];
-                const monthNodes = document.querySelectorAll('.month-node-card');
-                monthNodes.forEach(mNode => {
-                    const mIdx = mNode.dataset.monthIndex;
-                    const mName = document.getElementById(`month-title-input-${mIdx}`).value;
-                    
-                    let subjectArr = [];
-                    const subNodes = mNode.querySelectorAll('.subject-segment-block');
-                    subNodes.forEach(sNode => {
-                        const sIdx = sNode.dataset.subjectIndex;
-                        const sTitle = document.getElementById(`subject-title-input-${mIdx}-${sIdx}`).value;
-                        
-                        let activityArr = [];
-                        const actRows = sNode.querySelectorAll('.activity-item-row');
-                        actRows.forEach(aRow => {
-                            const aIdx = aRow.dataset.activityIndex;
-                            const aName = document.getElementById(`act-name-${mIdx}-${sIdx}-${aIdx}`).value;
-                            const aGrade = document.getElementById(`act-grade-${mIdx}-${sIdx}-${aIdx}`).value;
-                            activityArr.push({ name: aName, grade: aGrade });
-                        });
-
-                        subjectArr.push({ title: sTitle, activities: activityArr });
+            student.examMonths = [];
+            const monthNodes = document.querySelectorAll('.month-node-card');
+            monthNodes.forEach(mNode => {
+                const mIdx = mNode.dataset.monthIndex;
+                const mName = document.getElementById(`month-title-input-${mIdx}`).value;
+                let subjectArr = [];
+                const subNodes = mNode.querySelectorAll('.subject-segment-block');
+                subNodes.forEach(sNode => {
+                    const sIdx = sNode.dataset.subjectIndex;
+                    const sTitle = document.getElementById(`subject-title-input-${mIdx}-${sIdx}`).value;
+                    let activityArr = [];
+                    const actRows = sNode.querySelectorAll('.activity-item-row');
+                    actRows.forEach(aRow => {
+                        const aIdx = aRow.dataset.activityIndex;
+                        const aName = document.getElementById(`act-name-${mIdx}-${sIdx}-${aIdx}`).value;
+                        const aGrade = document.getElementById(`act-grade-${mIdx}-${sIdx}-${aIdx}`).value;
+                        activityArr.push({ name: aName, grade: aGrade });
                     });
 
-                    student.examMonths.push({ monthName: mName, subjects: subjectArr });
+                    subjectArr.push({ title: sTitle, activities: activityArr });
                 });
 
-                saveDatabaseToStorage();
-            }, 600); // 600ms Debounce limit allocation bounds
-        }
-
-        // 🌟 PROGRESSIVE EVALUATION DOM ARCHITECTURE ENGINE BUILDERS
-        function renderMonthsBlocksArchitecture() {
-            const wrapper = document.getElementById('months-wrapper');
-            wrapper.innerHTML = "";
-            monthCounter = 0;
-
-            const student = globalStudentsDb[activeStudentId];
-            if(!student.examMonths) student.examMonths = [];
-
-            student.examMonths.forEach(m => {
-                appendMonthNodeToDom(m);
+                student.examMonths.push({ monthName: mName, subjects: subjectArr });
             });
-        }
 
-        function addNewMonthBlock() {
-            const sampleMonthNode = { monthName: "", subjects: [{ title: "", activities: [{ name: "", grade: "" }] }] };
-            appendMonthNodeToDom(sampleMonthNode);
-            saveCurrentStudentData();
-        }
+            saveDatabaseToStorage();
+        }, 600);
+    }
 
-        function appendMonthNodeToDom(monthData) {
-            const wrapper = document.getElementById('months-wrapper');
-            const mIdx = monthCounter++;
+    // 🌟 PROGRESSIVE EVALUATION DOM ARCHITECTURE ENGINE BUILDERS
+    function renderMonthsBlocksArchitecture() {
+        const wrapper = document.getElementById('months-wrapper');
+        wrapper.innerHTML = "";
+        monthCounter = 0;
 
-            const card = document.createElement('div');
-            card.className = 'card month-node-card';
-            card.dataset.monthIndex = mIdx;
-            card.style.borderLeft = "6px solid var(--primary)";
+        const student = globalStudentsDb[activeStudentId];
+        if(!student.examMonths) student.examMonths = [];
 
-            card.innerHTML = `
-                <div style="display:flex; justify-content:between; align-items:center; margin-bottom:16px; gap:16px;">
-                    <div class="form-group" style="margin:0; flex-grow:1;">
-                        <label style="font-weight:700; color:var(--primary);">Timeline Month Evaluation Node Title Name</label>
-                        <input type="text" id="month-title-input-${mIdx}" value="${monthData.monthName || ''}" placeholder="e.g. June Month Log, First Mid-Term System" style="font-weight:600;" oninput="saveCurrentStudentData()">
-                    </div>
-                    <button class="btn btn-danger" style="padding:6px 12px; font-size:12px; margin-top:18px;" onclick="removeMonthNodeFromDom(this)">🗑️ Remove Node</button>
-                </div>
-                <div id="subjects-wrapper-${mIdx}" style="display:flex; flex-direction:column; gap:14px; margin-bottom:12px;"></div>
-                <button class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="addNewSubjectToMonth(${mIdx})">➕ Add Subject Category Section</button>
+        student.examMonths.forEach(m => {
+            appendMonthNodeToDom(m);
+        });
+    }
+
+    function addNewMonthBlock() {
+        const sampleMonthNode = { monthName: "", subjects: [{ title: "", activities: [{ name: "", grade: "" }] }] };
+        appendMonthNodeToDom(sampleMonthNode);
+        saveCurrentStudentData();
+    }
+
+    function appendMonthNodeToDom(monthData) {
+        const wrapper = document.getElementById('months-wrapper');
+        const mIdx = monthCounter++;
+
+        const card = document.createElement('div');
+        card.className = 'card month-node-card';
+        card.dataset.monthIndex = mIdx;
+        card.style.borderLeft = "6px solid var(--primary)";
+        card.style.padding = "15px";
+        card.style.marginBottom = "15px";
+
+        card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:16px;">
+            <div class="form-group" style="margin:0; flex-grow:1;">
+                <label style="font-weight:700; color:var(--primary);">Timeline Month Evaluation Node Title Name</label>
+                <input type="text" id="month-title-input-${mIdx}" value="${monthData.monthName || ''}" placeholder="e.g. June Month Log" style="font-weight:600; width:100%; padding:8px;" oninput="saveCurrentStudentData()">
             </div>
-            `;
-            wrapper.appendChild(card);
+            <button class="btn btn-danger" style="padding:6px 12px; font-size:12px; margin-top:18px;" onclick="removeMonthNodeFromDom(this)">🗑️ Remove Node</button>
+        </div>
+        <div id="subjects-wrapper-${mIdx}" style="display:flex; flex-direction:column; gap:14px; margin-bottom:12px;"></div>
+        <button class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="addNewSubjectToMonth(${mIdx})">➕ Add Subject Category Section</button>
+        `;
+        wrapper.appendChild(card);
 
-            subjectCounter = 0;
-            if(monthData.subjects) {
-                monthData.subjects.forEach(sub => {
-                    appendSubjectToMonthDom(mIdx, sub);
-                });
-            }
-        }
-
-        function removeMonthNodeFromDom(btn) {
-            if(confirm("ഈ ഇവാലുവേഷൻ നോഡ് പൂർണ്ണമായും ഒഴിവാക്കണോ?")) {
-                btn.closest('.month-node-card').remove();
-                saveCurrentStudentData();
-            }
-        }
-
-        function addNewSubjectToMonth(mIdx) {
-            appendSubjectToMonthDom(mIdx, { title: "", activities: [{ name: "", grade: "" }] });
-            saveCurrentStudentData();
-        }
-
-        function appendSubjectToMonthDom(mIdx, subData) {
-            const subWrapper = document.getElementById(`subjects-wrapper-${mIdx}`);
-            const sIdx = subjectCounter++;
-
-            const block = document.createElement('div');
-            block.className = 'subject-segment-block';
-            block.dataset.subjectIndex = sIdx;
-            block.style = "background:#f8fafc; border:1px solid #cbd5e1; padding:14px; border-radius:8px;";
-
-            block.innerHTML = `
-                <div style="display:flex; justify-content:between; align-items:center; margin-bottom:10px; gap:12px;">
-                    <div class="form-group" style="margin:0; flex-grow:1;">
-                        <input type="text" id="subject-title-input-${mIdx}-${sIdx}" value="${subData.title || ''}" placeholder="Enter Subject Area Title (e.g., Mathematics, General Science)" style="background:#fff; font-weight:600;" oninput="saveCurrentStudentData()">
-                    </div>
-                    <button class="btn btn-secondary" style="color:var(--danger); padding:6px; font-size:11px;" onclick="this.closest('.subject-segment-block').remove(); saveCurrentStudentData();">✕ Remove Subject</button>
-                </div>
-                <div id="activities-container-${mIdx}-${sIdx}" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
-                <button class="btn btn-primary" style="font-size:11px; padding:4px 10px; background:var(--accent);" onclick="addNewActivityRowToSub(${mIdx},${sIdx})">+ Add Activity Metric Parameter</button>
-            `;
-            subWrapper.appendChild(block);
-
-            let actCounter = 0;
-            if(subData.activities) {
-                subData.activities.forEach(act => {
-                    appendActivityRowDom(mIdx, sIdx, actCounter++, act);
-                });
-            }
-        }
-
-        function addNewActivityRowToSub(mIdx, sIdx) {
-            const container = document.getElementById(`activities-container-${mIdx}-${sIdx}`);
-            const actRows = container.querySelectorAll('.activity-item-row');
-            let maxIdx = 0;
-            actRows.forEach(r => { let id = parseInt(r.dataset.activityIndex); if(id > maxIdx) maxIdx = id; });
-            appendActivityRowDom(mIdx, sIdx, maxIdx + 1, { name: "", grade: "" });
-            saveCurrentStudentData();
-        }
-
-        function appendActivityRowDom(mIdx, sIdx, aIdx, actData) {
-            const container = document.getElementById(`activities-container-${mIdx}-${sIdx}`);
-            const row = document.createElement('div');
-            row.className = 'activity-item-row';
-            row.dataset.activityIndex = aIdx;
-            row.style = "display:grid; grid-template-columns: 1fr 120px auto; gap:10px; align-items:center;";
-
-            row.innerHTML = `
-                <input type="text" id="act-name-${mIdx}-${sIdx}-${aIdx}" value="${actData.name || ''}" placeholder="Evaluation Parameter Title / Internal Work Description" style="background:#fff;" oninput="saveCurrentStudentData()">
-                <select id="act-grade-${mIdx}-${sIdx}-${aIdx}" onchange="saveCurrentStudentData()" style="background:#fff;">
-                    <option value="">Grade</option><option value="A+">A+</option><option value="A">A</option><option value="B+">B+</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option>
-                </select>
-                <button class="btn btn-secondary" style="padding:8px; color:var(--danger);" onclick="this.closest('.activity-item-row').remove(); saveCurrentStudentData();">🗑️</button>
-            `;
-            container.appendChild(row);
-        }
-
-        // 🌟 BASE64 HIGH RESOLUTION PHOTO AVATAR PARSER BUFFER INTERFACE
-        function handleImageUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            if (file.size > 250 * 1024) { 
-                alert("ഫയൽ സൈസ് കൂടുതലാണ്! ദയവായി 250KB-യിൽ താഴെയുള്ള ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക.");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                tempBase64Photo = event.target.result;
-                document.getElementById('image-viewbox').innerHTML = `<img src="${tempBase64Photo}" style="width:100%; height:100%; object-fit:cover;">`;
-                saveCurrentStudentData();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // 🌟 PROFILE TERMINATION ARCHITECTURE CLEANUP METHOD
-        function deleteStudentProfile(id) {
-            if (confirm(`നിങ്ങൾ തീർച്ചയായും വിദ്യാർത്ഥിയുടെ (${globalStudentsDb[id].bio.name}) പ്രൊഫൈൽ ഡാറ്റാബേസിൽ നിന്നും നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുവോ?`)) {
-                delete globalStudentsDb[id];
-                saveDatabaseToStorage();
-            }
-        }
-
-        function finishAndReturnHome() {
-            saveCurrentStudentData();
-            activeStudentId = null;
-            
-            document.getElementById('nav-edit-profile').style.display = "none";
-            document.getElementById('nav-edit-tests').style.display = "none";
-            document.getElementById('nav-edit-major-exams').style.display = "none";
-            document.getElementById('nav-edit-remarks').style.display = "none";
-            
-            switchTab('tab-dashboard');
-        }
-
-        // 🌟 SEARCH FILTER LOGIC DIRECTORY SYSTEM
-        function filterStudents() {
-            const query = document.getElementById('search-input').value.toLowerCase().trim();
-            const cards = document.querySelectorAll('.student-profile-card');
-
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                if(text.includes(query)) card.style.display = "flex";
-                else card.style.display = "none";
+        if(monthData.subjects) {
+            monthData.subjects.forEach(sub => {
+                appendSubjectToMonthDom(mIdx, sub);
             });
         }
+    }
 
-        function openAddStudentModal() { document.getElementById('add-student-modal').classList.add('active'); }
-        function closeAddStudentModal() {
-            document.getElementById('add-student-modal').classList.remove('active');
-            document.getElementById('modal-new-name').value = "";
-            document.getElementById('modal-new-adm').value = "";
+    function removeMonthNodeFromDom(btn) {
+        if(confirm("ഈ ഇവാലുവേഷൻ നോഡ് പൂർണ്ണമായും ഒഴിവാക്കണോ?")) {
+            btn.closest('.month-node-card').remove();
+            saveCurrentStudentData();
+        }
+    }
+
+    function addNewSubjectToMonth(mIdx) {
+        appendSubjectToMonthDom(mIdx, { title: "", activities: [{ name: "", grade: "" }] });
+        saveCurrentStudentData();
+    }
+
+    function appendSubjectToMonthDom(mIdx, subData) {
+        const subWrapper = document.getElementById(`subjects-wrapper-${mIdx}`);
+        const sIdx = subWrapper.querySelectorAll('.subject-segment-block').length;
+
+        const block = document.createElement('div');
+        block.className = 'subject-segment-block';
+        block.dataset.subjectIndex = sIdx;
+        block.style = "background:#f8fafc; border:1px solid #cbd5e1; padding:14px; border-radius:8px; margin-bottom:10px;";
+
+        block.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:12px;">
+            <div class="form-group" style="margin:0; flex-grow:1; width:100%;">
+                <input type="text" id="subject-title-input-${mIdx}-${sIdx}" value="${subData.title || ''}" placeholder="Enter Subject Area Title" style="background:#fff; font-weight:600; width:100%; padding:6px;" oninput="saveCurrentStudentData()">
+            </div>
+            <button class="btn btn-secondary" style="color:var(--danger); padding:6px; font-size:11px;" onclick="this.closest('.subject-segment-block').remove(); saveCurrentStudentData();">✕ Remove Subject</button>
+        </div>
+        <div id="activities-container-${mIdx}-${sIdx}" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
+        <button class="btn btn-primary" style="font-size:11px; padding:4px 10px; background:var(--accent);" onclick="addNewActivityRowToSub(${mIdx},${sIdx})">+ Add Activity Metric Parameter</button>
+        `;
+        subWrapper.appendChild(block);
+
+        let actCounter = 0;
+        if(subData.activities) {
+            subData.activities.forEach(act => {
+                appendActivityRowDom(mIdx, sIdx, actCounter++, act);
+            });
+        }
+    }
+
+    function addNewActivityRowToSub(mIdx, sIdx) {
+        const container = document.getElementById(`activities-container-${mIdx}-${sIdx}`);
+        const actRows = container.querySelectorAll('.activity-item-row');
+        let maxIdx = -1;
+        actRows.forEach(r => { let id = parseInt(r.dataset.activityIndex); if(id > maxIdx) maxIdx = id; });
+        appendActivityRowDom(mIdx, sIdx, maxIdx + 1, { name: "", grade: "" });
+        saveCurrentStudentData();
+    }
+
+    function appendActivityRowDom(mIdx, sIdx, aIdx, actData) {
+        const container = document.getElementById(`activities-container-${mIdx}-${sIdx}`);
+        const row = document.createElement('div');
+        row.className = 'activity-item-row';
+        row.dataset.activityIndex = aIdx;
+        row.style = "display:grid; grid-template-columns: 1fr 120px auto; gap:10px; align-items:center; margin-bottom:5px;";
+
+        row.innerHTML = `
+            <input type="text" id="act-name-${mIdx}-${sIdx}-${aIdx}" value="${actData.name || ''}" placeholder="Evaluation Parameter Title / Internal Work Description" style="background:#fff; padding:6px;" oninput="saveCurrentStudentData()">
+            <select id="act-grade-${mIdx}-${sIdx}-${aIdx}" onchange="saveCurrentStudentData()" style="background:#fff; padding:6px;">
+                <option value="">Grade</option><option value="A+">A+</option><option value="A">A</option><option value="B+">B+</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option>
+            </select>
+            <button class="btn btn-secondary" style="padding:8px; color:var(--danger); background:none; border:none;" onclick="this.closest('.activity-item-row').remove(); saveCurrentStudentData();">🗑️</button>
+        `;
+        container.appendChild(row);
+    }
+
+    // 🌟 BASE64 HIGH RESOLUTION PHOTO AVATAR PARSER BUFFER INTERFACE
+    function handleImageUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 250 * 1024) {
+            alert("ഫയൽ സൈസ് കൂടുതലാണ്! ദയവായി 250KB-യിൽ താഴെയുള്ള ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക.");
+            return;
         }
 
-        // 🌟 NATIVE PRINT ENGINE OVERLAY INJECTOR SYSTEM
-        function triggerDirectPrint() {
-            if (!activeStudentId) return;
-            const student = globalStudentsDb[activeStudentId];
-            
-            // Build temporary clone preview for formatting template layouts
-            openQuickPreviewModal(activeStudentId);
-            const contentPayload = document.getElementById('preview-modal-body-content').innerHTML;
-            closeQuickPreviewModal();
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            tempBase64Photo = event.target.result;
+            document.getElementById('image-viewbox').innerHTML = `<img src="${tempBase64Photo}" style="width:100%; height:100%; object-fit:cover;">`;
+            saveCurrentStudentData();
+        };
+        reader.readAsDataURL(file);
+    }
 
-            document.getElementById('printable-template').innerHTML = `
-                <div style="padding:30px; font-family:sans-serif;">
-                    <div style="text-align:center; margin-bottom:20px; border-bottom:3px double #000; padding-bottom:10px;">
-                        <h2 style="margin:0 0 5px 0;">MY STUDENT MANAGEMENT SYSTEM REPORT SHEET</h2>
-                        <p style="margin:0; font-size:12px; color:#555;">Academic Session Instance: ${currentTeacherClass.replace('_',' ')} | Class In-Charge: ${currentTeacherName}</p>
-                    </div>
-                    ${contentPayload}
+    // 🌟 PROFILE TERMINATION ARCHITECTURE CLEANUP METHOD
+    function deleteStudentProfile(id) {
+        if (confirm(`നിങ്ങൾ തീർച്ചയായും വിദ്യാർത്ഥിയുടെ (${globalStudentsDb[id].bio.name}) പ്രൊഫൈൽ ഡാറ്റാബേസിൽ നിന്നും നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുവോ?`)) {
+            delete globalStudentsDb[id];
+            saveDatabaseToStorage();
+        }
+    }
+
+    function finishAndReturnHome() {
+        saveCurrentStudentData();
+        activeStudentId = null;
+
+        document.getElementById('nav-edit-profile').style.display = "none";
+        document.getElementById('nav-edit-tests').style.display = "none";
+        document.getElementById('nav-edit-major-exams').style.display = "none";
+        document.getElementById('nav-edit-remarks').style.display = "none";
+
+        switchTab('tab-dashboard');
+    }
+
+    // 🌟 SEARCH FILTER LOGIC DIRECTORY SYSTEM
+    function filterStudents() {
+        const query = document.getElementById('search-input').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.student-profile-card');
+
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            if(text.includes(query)) card.style.display = "flex";
+            else card.style.display = "none";
+        });
+    }
+
+    function openAddStudentModal() { document.getElementById('add-student-modal').classList.add('active'); }
+    function closeAddStudentModal() {
+        document.getElementById('add-student-modal').classList.remove('active');
+        document.getElementById('modal-new-name').value = "";
+        document.getElementById('modal-new-adm').value = "";
+    }
+
+    // 🌟 NATIVE PRINT ENGINE OVERLAY INJECTOR SYSTEM
+    function triggerDirectPrint() {
+        if (!activeStudentId) return;
+        const student = globalStudentsDb[activeStudentId];
+
+        openQuickPreviewModal(activeStudentId);
+        const contentPayload = document.getElementById('preview-modal-body-content').innerHTML;
+        closeQuickPreviewModal();
+
+        document.getElementById('printable-template').innerHTML = `
+            <div style="padding:30px; font-family:sans-serif;">
+                <div style="text-align:center; margin-bottom:20px; border-bottom:3px double #000; padding-bottom:10px;">
+                    <h2 style="margin:0 0 5px 0;">MY STUDENT MANAGEMENT SYSTEM REPORT SHEET</h2>
+                    <p style="margin:0; font-size:12px; color:#555;">Academic Session Instance: ${currentTeacherClass.replace('_',' ')} | Class In-Charge: ${currentTeacherName}</p>
                 </div>
-            `;
-            
-            window.print();
-        }
-    </script>
+                ${contentPayload}
+            </div>
+        `;
+
+        window.print();
+    }
+</script>
 </body>
 </html>
