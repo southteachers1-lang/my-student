@@ -151,7 +151,18 @@
             margin-bottom: 20px;
         }
 
-        /* Input styling */
+        .metric-card {
+            background: linear-gradient(135deg, #e0e7ff 0%, #ffffff 100%);
+            border: 1px solid #c7d2fe;
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
         .form-group {
             margin-bottom: 16px;
         }
@@ -212,7 +223,6 @@
             color: white;
         }
 
-        /* Modals */
         .modal {
             position: fixed;
             top: 0;
@@ -241,7 +251,6 @@
             overflow-y: auto;
         }
 
-        /* Student grid container */
         .student-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -253,7 +262,7 @@
             border-radius: 50%;
         }
 
-        /* 📱 RESPONSIVE MEDIA QUERIES (ഫോണിനും ടാബ്ലറ്റിനും വേണ്ടി) */
+        /* 📱 RESPONSIVE MEDIA QUERIES */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
@@ -291,7 +300,7 @@
             }
 
             .sidebar div {
-                display: none !important; /* Hide active batch info on mobile header */
+                display: none !important;
             }
 
             .main-content {
@@ -303,9 +312,8 @@
                 padding: 16px;
             }
 
-            /* Responsive Bio grid */
             #tab-bio .card > div {
-                grid-template-columns: 1fr !important; /* Image & inputs stacked vertically */
+                grid-template-columns: 1fr !important;
                 gap: 20px !important;
             }
 
@@ -344,7 +352,7 @@
 </head>
 <body>
 
-    <!-- 🌐 TEACHER WORKSPACE LOGIN OVERLAY WITH PIN SECURITY -->
+    <!-- 🌐 TEACHER WORKSPACE LOGIN OVERLAY -->
     <div id="teacher-login-screen">
         <div class="login-card">
             <h2>Workspace Login</h2>
@@ -396,17 +404,26 @@
         
         <!-- 📊 1. DASHBOARD OVERVIEW SECTION -->
         <div id="tab-dashboard" class="app-section active">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap:10px; margin-bottom: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap:10px; margin-bottom: 15px;">
                 <div>
                     <h1 id="dashboard-workspace-title" style="font-size: 1.8rem;">Classroom Hub Directory</h1>
-                    <p style="color:var(--secondary); font-size:14px;">വിദ്യാർത്ഥികളുടെ വിവരങ്ങൾ ചേർക്കാനും തിരുത്താനും താഴെയുള്ള ബട്ടൺ ഉപയോഗിക്കുക.</p>
+                    <p style="color:var(--secondary); font-size:14px;">വിਦ്യാർത്ഥികളുടെ വിവരങ്ങൾ ചേർക്കാനും തിരുത്താനും താഴെയുള്ള ബട്ടൺ ഉപയോഗിക്കുക.</p>
                 </div>
                 <button class="btn btn-primary" onclick="openAddStudentModal()">➕ Add Student Profile</button>
             </div>
 
+            <!-- 📈 TOTAL STUDENTS METRIC DISPLAY -->
+            <div class="metric-card">
+                <span style="font-size: 24px; background: white; padding: 10px; border-radius: 50%; box-shadow: 0 2px 5px rgba(79, 70, 229, 0.1);">👥</span>
+                <div>
+                    <p style="font-size: 12px; color: #4338ca; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">ആകെ കുട്ടികൾ (Total Students)</p>
+                    <h2 id="total-students-count" style="font-size: 22px; color: var(--accent); font-weight: 800; margin-top: 2px;">0</h2>
+                </div>
+            </div>
+
             <div class="card" style="padding:15px; display:flex; gap:10px; align-items:center;">
                 <span style="font-size:18px;">🔍</span>
-                <input type="text" id="search-input" oninput="filterStudents()" placeholder="പേരോ ഐഡിയോ ടൈപ്പ് ചെയ്ത് തിരയുക..." style="border:none; background:transparent; font-size:15px;">
+                <input type="text" id="search-input" oninput="filterStudents()" placeholder="പേരോ ഐഡിയോ ടൈപ്പ് ചെയ്ത് തിരയുക..." style="border:none; background:transparent; font-size:15px; width:100%;">
             </div>
 
             <div id="student-directory-list" class="student-grid">
@@ -428,7 +445,7 @@
                             <span style="font-size: 12px; color: var(--secondary);">No Photo</span>
                         </div>
                         <input type="file" id="file-uploader" style="display:none;" onchange="handleImageUpload(event)" accept="image/*">
-                        <button class="btn btn-secondary" style="width:100%; font-size:12px; padding:6px;" onclick="document.getElementById('file-uploader').click()">Upload Photo</button>
+                        <button class="btn btn-secondary" id="upload-status-btn" style="width:100%; font-size:12px; padding:6px;" onclick="document.getElementById('file-uploader').click()">Upload Photo</button>
                     </div>
 
                     <div style="display:grid; grid-template-columns:1fr; gap:16px;">
@@ -502,7 +519,7 @@
             </div>
         </div>
 
-        <!-- 🏆 4. STANDARDIZED KERALA CURRICULUM TERM EXAMS -->
+        <!-- 🏆 4. STANDARDIZED TERM EXAMS -->
         <div id="tab-major-exams" class="app-section">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 24px;">
                 <div>
@@ -529,7 +546,7 @@
             </div>
         </div>
 
-        <!-- 💬 5. DIAGNOSTIC INTERFACE COMMENTARY -->
+        <!-- 💬 5. REMARKS LOG -->
         <div id="tab-remarks" class="app-section">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 24px;">
                 <h2>Diagnostic Observation & Remarks Log</h2>
@@ -583,7 +600,7 @@
         </div>
     </div>
 
-    <!-- 🖨️ PRINTABLE HIDDEN AREA FOR CHROME PRINT ENGINE -->
+    <!-- 🖨️ PRINTABLE HIDDEN AREA -->
     <div id="printable-template"></div>
 
 
@@ -593,25 +610,14 @@
         const SUPABASE_URL = "https://amgouguawmqfvexfjdpd.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_VelXcLSMx_oNtkBH34kTXQ_lVcQPqjX";
 
-        // Initialize Supabase safely
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-        if (!supabaseClient) {
-            console.error("Supabase Library ലോഡ് ആയിട്ടില്ല!");
-        }
-
-        // Unique Class Pins Database (ഓരോ ക്ലാസ്സുകളുടെയും ലോഗിൻ പിൻ കോഡുകൾ)
         const CLASS_PIN_DB = {
-            "Class_1_A": "1011",
-            "Class_1_B": "1012",
-            "Class_2_A": "2011",
-            "Class_2_B": "2012",
-            "Class_3_A": "3011",
-            "Class_3_B": "3012",
-            "Class_4_A": "4011",
-            "Class_4_B": "4012",
-            "Class_5_A": "5011",
-            "Class_5_B": "5012"
+            "Class_1_A": "1011", "Class_1_B": "1012",
+            "Class_2_A": "2011", "Class_2_B": "2012",
+            "Class_3_A": "3011", "Class_3_B": "3012",
+            "Class_4_A": "4011", "Class_4_B": "4012",
+            "Class_5_A": "5011", "Class_5_B": "5012"
         };
 
         // 🌟 2. Global State Variables
@@ -619,11 +625,10 @@
         let globalStudentsDb = {};
         let activeStudentId = null;
         let currentTeacherClass = "";
-        let tempBase64Photo = "";
+        let currentPhotoUrl = ""; 
         let saveTimeout = null;
         let monthCounter = 0;
 
-        // 🌟 3. App Initialization
         window.onload = function () {
             initMajorExamsTableStructure();
             switchTab('tab-dashboard');
@@ -659,7 +664,6 @@
             });
         }
 
-        // 🌟 4. PIN-BASED SECURE TEACHER LOGIN SYSTEM
         function handleTeacherLogin() {
             const classSelect = document.getElementById('login-class-selection').value;
             const pinInput = document.getElementById('login-class-pin').value.trim();
@@ -669,53 +673,43 @@
                 return;
             }
 
-            // PIN കോഡ് ഒത്തുനോക്കൽ (Validation)
             const correctPin = CLASS_PIN_DB[classSelect];
             if (pinInput !== correctPin) {
-                alert("നിങ്ങൾ നൽകിയ Class PIN തെറ്റാണ്! ദയവായി ശരിയായ പിൻ നൽകുക.");
+                alert("നിങ്ങൾ നൽകിയ Class PIN തെറ്റാണ്!");
                 return;
             }
 
             currentTeacherClass = classSelect;
-
             document.getElementById('active-batch-label').innerText = currentTeacherClass.replace(/_/g, ' ');
             document.getElementById('dashboard-workspace-title').innerText = `Classroom Hub Directory - ${currentTeacherClass.replace(/_/g, ' ')}`;
             document.getElementById('teacher-login-screen').style.display = 'none';
 
-            // Load class-specific data from Supabase
             loadDatabaseFromStorage();
         }
 
-        // 🚪 LOGOUT FUNCTION
         function handleLogout() {
             if (confirm("തീർച്ചയായും ലോഗ് ഔട്ട് ചെയ്യണോ?")) {
-                // State variables reset ചെയ്യുക
                 activeStudentId = null;
                 currentTeacherClass = "";
                 globalStudentsDb = {};
-                tempBase64Photo = "";
+                currentPhotoUrl = "";
 
-                // UI Inputs reset ചെയ്യുക
                 document.getElementById('login-class-selection').value = "";
                 document.getElementById('login-class-pin').value = "";
                 document.getElementById('active-batch-label').innerText = "None";
                 document.getElementById('student-directory-list').innerHTML = "";
+                document.getElementById('total-students-count').innerText = "0";
 
-                // Edit tabs ഒളിപ്പിക്കുക
                 document.getElementById('nav-edit-profile').style.display = "none";
                 document.getElementById('nav-edit-tests').style.display = "none";
                 document.getElementById('nav-edit-major-exams').style.display = "none";
                 document.getElementById('nav-edit-remarks').style.display = "none";
 
-                // ഡാഷ്‌ബോർഡിലേക്ക് തിരികെ മാറ്റുക
                 switchTab('tab-dashboard');
-
-                // ലോഗിൻ സ്ക്രീൻ കാണിക്കുക
                 document.getElementById('teacher-login-screen').style.display = 'flex';
             }
         }
 
-        // 🌟 5. ATOMIC WORKSPACE SAVING LOGIC (SUPABASE)
         async function saveDatabaseToStorage() {
             if (!currentTeacherClass || !supabaseClient) return;
 
@@ -728,15 +722,12 @@
                 }, { onConflict: 'class_id' });
 
             if (error) {
-                console.error("Supabase Sync Fault Error Logs: ", error);
-                alert("ഡാറ്റ ക്ലൗഡിൽ സമന്വയിപ്പിക്കുന്നതിൽ തകരാർ നേരിട്ടു!");
+                alert("ഡാറ്റ സമന്വയിപ്പിക്കുന്നതിൽ തകരാർ നേരിട്ടു!");
             } else {
-                console.log(`Sync complete for workspace: ${currentTeacherClass}`);
                 updateDashboardDirectory();
             }
         }
 
-        // 🌟 6. WORKSPACE LOAD QUERY HANDLER (SUPABASE)
         async function loadDatabaseFromStorage() {
             if (!currentTeacherClass || !supabaseClient) return;
 
@@ -746,11 +737,6 @@
                 .eq('class_id', currentTeacherClass)
                 .single();
 
-            if (error && error.code !== 'PGRST116') {
-                console.error("Database Retrieval Error Matrix: ", error);
-                return;
-            }
-
             if (data && data.students_db) {
                 globalStudentsDb = data.students_db;
             } else {
@@ -759,13 +745,16 @@
             updateDashboardDirectory();
         }
 
-        // 🌟 DYNAMIC DASHBOARD ENGINE UPDATER
         function updateDashboardDirectory() {
             const listContainer = document.getElementById('student-directory-list');
             if (!listContainer) return;
             listContainer.innerHTML = "";
             
             const studentIds = Object.keys(globalStudentsDb);
+            
+            // 📈 കുട്ടികളുടെ ആകെ എണ്ണം അപ്ഡേറ്റ് ചെയ്യുന്നു
+            document.getElementById('total-students-count').innerText = studentIds.length;
+
             if (studentIds.length === 0) {
                 listContainer.innerHTML = `
                 <div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--secondary); background:#ffffff; border-radius:12px; border:1px dashed var(--border-color);">
@@ -778,17 +767,13 @@
                 const student = globalStudentsDb[id];
                 const card = document.createElement('div');
                 card.className = 'card student-profile-card';
-                card.style.display = 'flex';
-                card.style.alignItems = 'center';
-                card.style.justifyContent = 'space-between';
-                card.style.padding = '15px';
-                card.style.background = '#ffffff';
-                card.style.borderRadius = '12px';
-                card.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.05)';
+                card.style = 'display:flex; align-items:center; justify-content:space-between; padding:15px; background:#ffffff; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);';
+                
                 const photoSrc = student.bio.photo ? student.bio.photo : '';
                 const photoHTML = photoSrc
                     ? `<img src="${photoSrc}" style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:2px solid var(--primary);">`
                     : `<div style="width:50px; height:50px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-size:20px; color:#94a3b8;">👤</div>`;
+                
                 card.innerHTML = `
                 <div style="display:flex; align-items:center; gap:15px; overflow:hidden;">
                     ${photoHTML}
@@ -805,6 +790,49 @@
                 `;
                 listContainer.appendChild(card);
             });
+        }
+
+        // 🌟 3. SUPABASE BUCKET STORAGE IMAGE UPLOAD SYSTEM
+        async function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file || !activeStudentId) return;
+
+            if (file.size > 250 * 1024) {
+                alert("ഫയൽ സൈസ് കൂടുതലാണ്! ദയവായി 250KB-യിൽ താഴെയുള്ള ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക.");
+                return;
+            }
+
+            const uploadBtn = document.getElementById('upload-status-btn');
+            uploadBtn.innerText = "⏳ Uploading...";
+            uploadBtn.disabled = true;
+
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${currentTeacherClass}/${activeStudentId}_${Date.now()}.${fileExt}`;
+
+            const { data, error } = await supabaseClient.storage
+                .from('student-photos')
+                .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+            if (error) {
+                console.error("Storage Upload Error: ", error);
+                alert("ഫോട്ടോ ക്ലൗഡിലേക്ക് മാറ്റാൻ സാധിച്ചില്ല! ബക്കറ്റ് സെറ്റിംഗ്സ് പരിശോധിക്കുക.");
+                uploadBtn.innerText = "Upload Photo";
+                uploadBtn.disabled = false;
+                return;
+            }
+
+            const { data: publicUrlData } = supabaseClient.storage
+                .from('student-photos')
+                .getPublicUrl(fileName);
+
+            currentPhotoUrl = publicUrlData.publicUrl;
+
+            document.getElementById('image-viewbox').innerHTML = `<img src="${currentPhotoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+            
+            uploadBtn.innerText = "✅ Uploaded";
+            uploadBtn.disabled = false;
+
+            saveCurrentStudentData();
         }
 
         function openQuickPreviewModal(id) {
@@ -839,7 +867,7 @@
                             <thead>
                                 <tr style="background:#f1f5f9; color:#334155;">
                                     <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Subject Area</th>
-                                    <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Evaluation Parameters / Activity Description</th>
+                                    <th style="border:1px solid #cbd5e1; padding:6px; text-align:left;">Evaluation Parameters</th>
                                     <th style="border:1px solid #cbd5e1; padding:6px; text-align:center;">Grade</th>
                                 </tr>
                             </thead>
@@ -882,31 +910,28 @@
                     Phone No: ${student.bio.contactPhone || '—'}<br>Address: ${student.bio.homeAddress || '—'}
                 </div>
             </div>
-
             <div style="margin-top:20px;">
-                <h3 style="font-size:13px; color:var(--accent); margin-bottom:10px;">🏆 Kerala Curriculum Standardized Evaluation Term Records</h3>
+                <h3 style="font-size:13px; color:var(--accent); margin-bottom:10px;">🏆 Term Assessment Records</h3>
                 <div style="overflow-x: auto;">
                     <table class="academic-printable-table" style="width:100%; border-collapse:collapse; font-size:12px; min-width: 450px;">
                         <thead>
                             <tr style="background:#f1f5f9; color:#334155;">
                                 <th style="border:1px solid #cbd5e1; padding:8px; text-align:left;">Subject</th>
-                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Onam (1st Term)</th>
-                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Christmas (2nd Term)</th>
-                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Annual (Final Term)</th>
+                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Onam</th>
+                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Christmas</th>
+                                <th style="border:1px solid #cbd5e1; padding:8px; text-align:center;">Annual</th>
                             </tr>
                         </thead>
                         <tbody>${majorRowsHTML}</tbody>
                     </table>
                 </div>
             </div>
-
             <div style="margin-top:20px;">
-                <h3>📊 Progressive Continuous Evaluation Roadmap Records</h3>
+                <h3>📊 Continuous Evaluation Roadmap Records</h3>
                 ${reportHTML || '<p style="font-size:12px; color:var(--secondary); text-align:center; padding:15px; border:1px dashed #cbd5e1; border-radius:6px;">No dynamic monthly milestones logged yet.</p>'}
             </div>
-
             <div style="margin-top:20px; background:#fff7ed; border-left:4px solid #f97316; padding:12px; border-radius:0 6px 6px 0;">
-                <h4 style="margin:0 0 6px 0; color:#c2410c; font-size:13px;">💬 Comprehensive Observation & Diagnostic Commentary</h4>
+                <h4 style="margin:0 0 6px 0; color:#c2410c; font-size:13px;">💬 Commentary</h4>
                 <p style="font-size:12px; color:#475569; margin:0; white-space:pre-wrap;">${student.remarks || 'No behavioral logs compiled yet.'}</p>
             </div>
             `;
@@ -923,7 +948,6 @@
             document.getElementById('quick-preview-modal').classList.remove('active');
         }
 
-        // 🌟 SWITCH MANAGEMENT BETWEEN WORKSPACE FLOW TABS
         function switchTab(tabId) {
             document.querySelectorAll('.app-section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
@@ -941,7 +965,6 @@
             }
         }
 
-        // 🌟 CORE STUDENT IDENTITY WORKSPACE GENERATION PARSER
         function createNewStudentProfile() {
             const name = document.getElementById('modal-new-name').value.trim();
             const admNo = document.getElementById('modal-new-adm').value.trim().toUpperCase();
@@ -958,9 +981,7 @@
 
             globalStudentsDb[admNo] = {
                 bio: {
-                    name: name,
-                    admissionNo: admNo,
-                    gender: "Female",
+                    name: name, admissionNo: admNo, gender: "Female",
                     classYear: currentTeacherClass.replace(/_/g, ' '),
                     admissionDate: "", bloodGroup: "", dob: "",
                     caste: "", religion: "", nationality: "Indian",
@@ -968,9 +989,7 @@
                     motherName: "", siblingsMatrix: "", familyType: "Nuclear Family (അണുകുടുംബം)",
                     photo: ""
                 },
-                examMonths: [],
-                majorExams: {},
-                remarks: ""
+                examMonths: [], majorExams: {}, remarks: ""
             };
 
             saveDatabaseToStorage();
@@ -982,6 +1001,8 @@
             activeStudentId = id;
             const student = globalStudentsDb[id];
             if (!student) return;
+
+            document.getElementById('upload-status-btn').innerText = "Upload Photo";
 
             document.getElementById('bio-name').value = student.bio.name || '';
             document.getElementById('bio-gender').value = student.bio.gender || 'Female';
@@ -1004,10 +1025,10 @@
             const viewbox = document.getElementById('image-viewbox');
             if(student.bio.photo) {
                 viewbox.innerHTML = `<img src="${student.bio.photo}" style="width:100%; height:100%; object-fit:cover;">`;
-                tempBase64Photo = student.bio.photo;
+                currentPhotoUrl = student.bio.photo;
             } else {
                 viewbox.innerHTML = `<span style="font-size: 12px; color: var(--secondary);">No Photo</span>`;
-                tempBase64Photo = "";
+                currentPhotoUrl = "";
             }
 
             const labelStr = `${student.bio.name} (${student.bio.admissionNo})`;
@@ -1037,7 +1058,6 @@
             });
         }
 
-        // 🌟 LIVE SAVING PIPELINE MATRIX
         function saveCurrentStudentData() {
             if (!activeStudentId) return;
 
@@ -1061,7 +1081,7 @@
                 student.bio.motherName = document.getElementById('bio-mother').value;
                 student.bio.siblingsMatrix = document.getElementById('bio-siblings').value;
                 student.bio.familyType = document.getElementById('bio-family-type').value;
-                student.bio.photo = tempBase64Photo;
+                student.bio.photo = currentPhotoUrl; 
                 student.remarks = document.getElementById('teacher-notes').value;
 
                 student.majorExams = {};
@@ -1092,10 +1112,8 @@
                             const aGrade = document.getElementById(`act-grade-${mIdx}-${sIdx}-${aIdx}`).value;
                             activityArr.push({ name: aName, grade: aGrade });
                         });
-
                         subjectArr.push({ title: sTitle, activities: activityArr });
                     });
-
                     student.examMonths.push({ monthName: mName, subjects: subjectArr });
                 });
 
@@ -1103,7 +1121,6 @@
             }, 600);
         }
 
-        // 🌟 PROGRESSIVE EVALUATION DOM ENGINE
         function renderMonthsBlocksArchitecture() {
             const wrapper = document.getElementById('months-wrapper');
             wrapper.innerHTML = "";
@@ -1130,9 +1147,7 @@
             const card = document.createElement('div');
             card.className = 'card month-node-card';
             card.dataset.monthIndex = mIdx;
-            card.style.borderLeft = "6px solid var(--primary)";
-            card.style.padding = "15px";
-            card.style.marginBottom = "15px";
+            card.style = "border-left:6px solid var(--primary); padding:15px; margin-bottom:15px;";
 
             card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:16px; flex-wrap: wrap;">
@@ -1212,7 +1227,7 @@
             row.style = "display:grid; grid-template-columns: 1fr 100px auto; gap:8px; align-items:center; margin-bottom:5px;";
 
             row.innerHTML = `
-                <input type="text" id="act-name-${mIdx}-${sIdx}-${aIdx}" value="${actData.name || ''}" placeholder="Activity Parameter / Metric Details" style="background:#fff; padding:6px;" oninput="saveCurrentStudentData()">
+                <input type="text" id="act-name-${mIdx}-${sIdx}-${aIdx}" value="${actData.name || ''}" placeholder="Activity Parameter Details" style="background:#fff; padding:6px;" oninput="saveCurrentStudentData()">
                 <select id="act-grade-${mIdx}-${sIdx}-${aIdx}" onchange="saveCurrentStudentData()" style="background:#fff; padding:6px; width: 100%;">
                     <option value="">Grade</option><option value="A+">A+</option><option value="A">A</option><option value="B+">B+</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option>
                 </select>
@@ -1221,28 +1236,24 @@
             container.appendChild(row);
         }
 
-        // 🌟 BASE64 IMAGE UPLOAD LOADER
-        function handleImageUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        async function deleteStudentProfile(id) {
+            const student = globalStudentsDb[id];
+            if (!student) return;
 
-            if (file.size > 250 * 1024) {
-                alert("ഫയൽ സൈസ് കൂടുതലാണ്! ദയവായി 250KB-യിൽ താഴെയുള്ള ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക.");
-                return;
-            }
+            if (confirm(`നിങ്ങൾ തീർച്ചയായും (${student.bio.name}) പ്രൊഫൈൽ ഡാറ്റാബേസിൽ നിന്നും നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുവോ?`)) {
+                
+                if (student.bio.photo && student.bio.photo.includes('student-photos')) {
+                    try {
+                        const pathParts = student.bio.photo.split('/student-photos/');
+                        if (pathParts.length > 1) {
+                            const filePath = pathParts[1];
+                            await supabaseClient.storage.from('student-photos').remove([filePath]);
+                        }
+                    } catch (e) {
+                        console.error("ഫോട്ടോ ഡിലീറ്റ് ചെയ്യുന്നതിൽ പിശക്: ", e);
+                    }
+                }
 
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                tempBase64Photo = event.target.result;
-                document.getElementById('image-viewbox').innerHTML = `<img src="${tempBase64Photo}" style="width:100%; height:100%; object-fit:cover;">`;
-                saveCurrentStudentData();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // 🌟 PROFILE TERMINATION ARCHITECTURE
-        function deleteStudentProfile(id) {
-            if (confirm(`നിങ്ങൾ തീർച്ചയായും വിദ്യാർത്ഥിയുടെ (${globalStudentsDb[id].bio.name}) പ്രൊഫൈൽ ഡാറ്റാബേസിൽ നിന്നും നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുവോ?`)) {
                 delete globalStudentsDb[id];
                 saveDatabaseToStorage();
             }
@@ -1260,7 +1271,6 @@
             switchTab('tab-dashboard');
         }
 
-        // 🌟 SEARCH FILTER LOGIC
         function filterStudents() {
             const query = document.getElementById('search-input').value.toLowerCase().trim();
             const cards = document.querySelectorAll('.student-profile-card');
@@ -1279,11 +1289,8 @@
             document.getElementById('modal-new-adm').value = "";
         }
 
-        // 🌟 NATIVE PRINT ENGINE OVERLAY INJECTOR SYSTEM
         function triggerDirectPrint() {
             if (!activeStudentId) return;
-            const student = globalStudentsDb[activeStudentId];
-
             openQuickPreviewModal(activeStudentId);
             const contentPayload = document.getElementById('preview-modal-body-content').innerHTML;
             closeQuickPreviewModal();
@@ -1297,7 +1304,6 @@
                     ${contentPayload}
                 </div>
             `;
-
             window.print();
         }
     </script>
