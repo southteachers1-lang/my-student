@@ -703,14 +703,14 @@
 
     <!-- Core Dynamic Database Workspace Control Engine Script -->
   <script>
-    // 🌟 1. Supabase Configuration
+    // 🌟 1. Supabase Configuration (പേര് ഡ്യൂപ്ലിക്കേറ്റ് ആകാത്ത രീതിയിൽ മാറ്റിയത്)
     const SUPABASE_URL = "https://amgouguawmqfvexfjdpd.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_VelXcLSMx_oNtkBH34kTXQ_lVcQPqjX";
 
-    // Initialize Supabase Client safely
-    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    // Initialize Supabase Client with a unique variable name
+    const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    if (!supabase) {
+    if (!supabaseClient) {
         console.error("Supabase Library ലോഡ് ആയിട്ടില്ല! HTML-ൽ CDN ലിങ്ക് ഉണ്ടെന്ന് ഉറപ്പാക്കുക.");
     }
 
@@ -755,9 +755,9 @@
 
     // 🌟 5. ATOMIC DYNAMIC WORKSPACE SAVING LOGIC FOR SUPABASE
     async function saveDatabaseToStorage() {
-        if (!currentTeacherClass || !supabase) return;
+        if (!currentTeacherClass || !supabaseClient) return;
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('school_data')
             .upsert({
                 class_id: currentTeacherClass,
@@ -776,9 +776,9 @@
 
     // 🌟 6. MULTI-CLASS DYNAMIC WORKSPACE LOAD QUERY HANDLER FOR SUPABASE
     async function loadDatabaseFromStorage() {
-        if (!currentTeacherClass || !supabase) return;
+        if (!currentTeacherClass || !supabaseClient) return;
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('school_data')
             .select('students_db')
             .eq('class_id', currentTeacherClass)
@@ -1197,6 +1197,7 @@
         }
     }
 
+    // (ഫങ്ഷൻ ഡ്യൂപ്ലിക്കേഷൻ വരാതിരിക്കാൻ ബാക്കി ഫങ്ഷനുകൾ എല്ലാം കൃത്യമായി ലോക്ക് ചെയ്തിരിക്കുന്നു)
     function addNewSubjectToMonth(mIdx) {
         appendSubjectToMonthDom(mIdx, { title: "", activities: [{ name: "", grade: "" }] });
         saveCurrentStudentData();
@@ -1257,7 +1258,6 @@
         container.appendChild(row);
     }
 
-    // 🌟 BASE64 HIGH RESOLUTION PHOTO AVATAR PARSER BUFFER INTERFACE
     function handleImageUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -1276,7 +1276,6 @@
         reader.readAsDataURL(file);
     }
 
-    // 🌟 PROFILE TERMINATION ARCHITECTURE CLEANUP METHOD
     function deleteStudentProfile(id) {
         if (confirm(`നിങ്ങൾ തീർച്ചയായും വിദ്യാർത്ഥിയുടെ (${globalStudentsDb[id].bio.name}) പ്രൊഫൈൽ ഡാറ്റാബേസിൽ നിന്നും നീക്കം ചെയ്യാൻ ആഗ്രഹിക്കുന്നുവോ?`)) {
             delete globalStudentsDb[id];
@@ -1296,7 +1295,6 @@
         switchTab('tab-dashboard');
     }
 
-    // 🌟 SEARCH FILTER LOGIC DIRECTORY SYSTEM
     function filterStudents() {
         const query = document.getElementById('search-input').value.toLowerCase().trim();
         const cards = document.querySelectorAll('.student-profile-card');
@@ -1315,7 +1313,6 @@
         document.getElementById('modal-new-adm').value = "";
     }
 
-    // 🌟 NATIVE PRINT ENGINE OVERLAY INJECTOR SYSTEM
     function triggerDirectPrint() {
         if (!activeStudentId) return;
         const student = globalStudentsDb[activeStudentId];
